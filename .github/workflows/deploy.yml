@@ -1,0 +1,55 @@
+name: Deploy FastAPI a cPanel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'main.py'
+      - 'requirements.txt'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descargar código
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 2. Deploy a cPanel vía FTP
+      - name: Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: api.stifhbl.com/
+          dangerous-clean-slate: false
+          log-level: standard
+          exclude: |
+            **/.git/**
+            **/.github/**
+            **/Dockerfile
+            **/docker-compose.yml
+            **/.dockerignore
+            **/passenger_wsgi.py
+            **/.gitignore
+            **/.env.example
+            **/.vscode/**
+            **/.idea/**
+            **/*.md
+            **/README.md
+            **/venv/**
+            **/__pycache__/**
+            **/*.pyc
+            **/.pytest_cache/**
+            **/node_modules/**
+          state-name: .ftp-deploy-sync-state.json
+      
+      - name: Deploy notification
+        run: |
+          echo "✅ FastAPI deploying to cPanel"
+          echo "📝 Remember to run: pip install -r requirements.txt"
+          echo "🚀 And restart uvicorn"
